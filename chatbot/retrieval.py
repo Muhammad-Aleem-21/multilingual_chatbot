@@ -38,12 +38,16 @@ from typing import List, Tuple
 import numpy as np
 
 from chatbot import llm
-from chatbot.config import DEFAULT_MODEL, DOCS_DIR, EMBEDDING_MODEL, MIN_SCORE, TOP_K
+from chatbot.config import (DEFAULT_MODEL, DOCS_DIR, EMBEDDING_MODEL, MIN_SCORE,
+                            MODELS_TO_COMPARE, TOP_K)
 from chatbot.language_detect import detect_language
 from chatbot.llm import LLMError
 
 # The embedding model only "reads" about 128 word-pieces, so chunks must stay short.
 MAX_CHUNK_CHARS = 500
+
+# A document at most this long (in characters) is given to the AI WHOLE when it matches.
+DOC_EXPAND_MAX_CHARS = 3000
 
 
 @dataclass
@@ -132,6 +136,15 @@ def chunks_from_files(files: List[Tuple[str, bytes]]) -> Tuple[List[Chunk], List
     return chunks, problems
 
 
+def clean_translation(raw: str) -> str:
+    """Tidy a model's translation: drop hidden <think>...</think> reasoning and quotes."""
+    text = re.sub(r"<think>.*?</think>", "", raw or "", flags=re.DOTALL)
+    if "<think>" in text:                    # reasoning started but never finished = unusable
+        return ""
+    lines = [line.strip() for line in text.strip().splitlines() if line.strip()]
+    return lines[0].strip(" \"'“”") if lines else ""
+
+
 # ---------------------------------------------------------------------------
 # The searcher
 # ---------------------------------------------------------------------------
@@ -164,6 +177,19 @@ class Retriever:
         )
         self.use_query_translation = use_query_translation
         self.translate_model = translate_model
+        # Models tried (in this order) for translating a question: the chosen one first, then
+        # the other models from config.py as a backup.
+        self.translate_models = list(dict.fromkeys([translate_model] + list(MODELS_TO_COMPARE)))
+        self.last_queries = []              # what the last search used (question [+ translation])
+        self.last_translation_error = ""    # why translation failed, "" if it did not
+
+        # Bookkeeping used by search(): which chunks belong to which document, and how
+        # long each document is.
+        self.source_members = {}   # "return_policy.txt" -> [chunk numbers, in order]
+        self.source_chars = {}     # "return_policy.txt" -> total characters
+        for number, chunk in enumerate(self.chunks):
+            self.source_members.setdefault(chunk.source, []).append(number)
+            self.source_chars[chunk.source] = self.source_chars.get(chunk.source, 0) + len(chunk.text)
 
     def with_documents(self, chunks: List[Chunk]) -> "Retriever":
         """A NEW Retriever over different chunks, re-using the already-loaded model."""
@@ -172,15 +198,36 @@ class Retriever:
                          translate_model=self.translate_model)
 
     def translate_query(self, query: str) -> str:
-        """Ask the LLM to turn an Urdu / Roman Urdu / mixed question into English."""
+        """Ask the LLM to turn an Urdu / Roman Urdu / mixed question into English.
+
+        Returns "" if no model could do it; the reason is then in self.last_translation_error
+        (so the page and check_retrieval.py can SHOW why instead of failing silently).
+        """
         messages = [
             {"role": "system", "content": (
-                "Translate the user's message into plain English. The message may be Urdu "
-                "script, Roman Urdu (Urdu in English letters, with spelling variations) or a "
-                "mix with English. Output ONLY the English translation, nothing else.")},
+                "You translate customer messages into a short, clear English question or "
+                "sentence. The message may be Urdu script, Roman Urdu (Urdu typed in English "
+                "letters, with creative spelling and typos, e.g. 'cheex kitne din k ander wapsi "
+                "ho skti h' = 'within how many days can an item be returned') or a mix with "
+                "English. Output ONLY the English translation, nothing else.")},
             {"role": "user", "content": query},
         ]
-        return llm.chat(messages, model=self.translate_model, temperature=0, max_tokens=120)
+        problems = []
+        for model in self.translate_models:             # try the next model if one fails
+            try:
+                # Generous token limit: "thinking" models (gpt-oss, qwen3 ...) spend tokens
+                # on hidden reasoning first and return NOTHING if the limit is too small.
+                raw = llm.chat(messages, model=model, temperature=0, max_tokens=1500)
+            except LLMError as error:
+                problems.append(f"{model}: {error}")
+                continue
+            text = clean_translation(raw)
+            if text:
+                self.last_translation_error = ""
+                return text
+            problems.append(f"{model}: returned an empty answer")
+        self.last_translation_error = " | ".join(problems)
+        return ""
 
     def score_all(self, query: str) -> np.ndarray:
         """Similarity (0..1, higher = closer in meaning) between the query and EVERY chunk."""
@@ -198,24 +245,43 @@ class Retriever:
         English questions are never translated (saves a Groq call).
         """
         queries = [query]
+        self.last_translation_error = ""
         if self.use_query_translation and detect_language(query).reply_language in ("urdu", "roman_urdu"):
-            try:
-                english = self.translate_query(query).strip()
-            except LLMError:
-                english = ""               # translation failed: just search with the original
+            english = self.translate_query(query)   # "" when it failed (reason saved)
             if english and english.lower() != query.strip().lower():
                 queries.append(english)
+        self.last_queries = queries                 # so the page can show what was searched
         return queries
 
     def search(self, query: str, k: int = TOP_K, min_score: float = MIN_SCORE) -> List[Chunk]:
-        """Return up to k chunks that best match the query's meaning."""
+        """Return the chunks that best match the query's meaning.
+
+        Step 1  score every chunk and keep the k best that reach min_score  ("hits").
+        Step 2  EXPAND each hit so the AI sees the whole story, not a random slice:
+                  - SHORT document (<= DOC_EXPAND_MAX_CHARS): include ALL its chunks.
+                  - LONG document (e.g. a big PDF): include the hit plus its neighbours
+                    (one chunk before and after).
+        Why? Paragraphs of one document often score almost the same, so the "top 3" can
+        silently drop the one that holds the answer (for example the paragraph that says
+        "return within 7 days"). Expanding fixes that.
+        """
         # For every chunk keep its BEST score over all the query versions.
         scores = np.max([self.score_all(text) for text in self.queries_for(query)], axis=0)
         best_first = np.argsort(-scores)[:k]           # indexes of the k highest scores
+        hits = [int(i) for i in best_first if scores[i] >= min_score]
 
-        results = []
-        for index in best_first:
-            if scores[index] >= min_score:
-                chunk = self.chunks[index]
-                results.append(Chunk(chunk.text, chunk.source, float(scores[index])))
-        return results
+        wanted = set()                                  # chunk numbers we will return
+        group_best = {}                                 # best score per document (for ordering)
+        for index in hits:
+            source = self.chunks[index].source
+            group_best[source] = max(group_best.get(source, -1.0), float(scores[index]))
+            members = self.source_members[source]       # chunk numbers of this document, in order
+            if self.source_chars[source] <= DOC_EXPAND_MAX_CHARS:
+                wanted.update(members)
+            else:
+                position = members.index(index)
+                wanted.update(members[max(0, position - 1): position + 2])
+
+        # Best document first; inside a document keep the original reading order.
+        ordered = sorted(wanted, key=lambda i: (-group_best[self.chunks[i].source], i))
+        return [Chunk(self.chunks[i].text, self.chunks[i].source, float(scores[i])) for i in ordered]

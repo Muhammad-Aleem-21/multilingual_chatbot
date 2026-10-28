@@ -63,12 +63,25 @@ CONTEXT_RULES_NO_DOCS = """
 You have no shop documents. For specific policies, prices or order details you cannot know,
 say so politely and suggest contacting customer support. Never invent facts."""
 
+# Documents ARE switched on, but the search found nothing close to the question.
+CONTEXT_RULES_NOTHING_FOUND = """
+The documents were searched but nothing relevant to this question was found. Say politely that
+you could not find this in the documents, and suggest rephrasing the question or contacting
+customer support. Never invent facts."""
 
-def build_system_prompt(language: str, chunks: Optional[list] = None, role: str = ROLE_SHOP) -> str:
-    """Create the hidden instruction message for ONE turn."""
+
+def build_system_prompt(language: str, chunks: Optional[list] = None, role: str = ROLE_SHOP,
+                        searched: bool = False) -> str:
+    """Create the hidden instruction message for ONE turn.
+
+    searched  True when document search was switched on (so "found nothing" is different
+              from "there are no documents at all").
+    """
     if chunks:
         documents = "\n".join(f"- {chunk.text}" for chunk in chunks)
         context_rules = CONTEXT_RULES_WITH_DOCS.format(documents=documents)
+    elif searched:
+        context_rules = CONTEXT_RULES_NOTHING_FOUND
     else:
         context_rules = CONTEXT_RULES_NO_DOCS
     return SYSTEM_PROMPT.format(
@@ -82,6 +95,8 @@ class BotReply:
     language: str                   # language the bot was told to use
     detection: Detection            # what the detector saw in the user's message
     sources: List[str] = field(default_factory=list)   # document files that were used
+    search_queries: List[str] = field(default_factory=list)  # what was searched (question [+ English])
+    translation_error: str = ""     # why the English translation failed ("" = fine / not needed)
 
 
 class Chatbot:
@@ -107,7 +122,9 @@ class Chatbot:
         chunks = self.retriever.search(user_text) if self.retriever else []
 
         # 3) build the messages list: instructions + recent history + new question
-        messages = [{"role": "system", "content": build_system_prompt(language, chunks, self.role)}]
+        system_prompt = build_system_prompt(language, chunks, self.role,
+                                            searched=self.retriever is not None)
+        messages = [{"role": "system", "content": system_prompt}]
         messages += self.history[-self.max_history_turns * 2:]
         messages.append({"role": "user", "content": user_text})
 
@@ -119,4 +136,8 @@ class Chatbot:
         self.history.append({"role": "assistant", "content": answer})
 
         sources = sorted({chunk.source for chunk in chunks})
-        return BotReply(text=answer, language=language, detection=detection, sources=sources)
+        return BotReply(
+            text=answer, language=language, detection=detection, sources=sources,
+            search_queries=list(getattr(self.retriever, "last_queries", [])),
+            translation_error=getattr(self.retriever, "last_translation_error", ""),
+        )

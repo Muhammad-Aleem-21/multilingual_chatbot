@@ -37,7 +37,7 @@ from chatbot.language_detect import LanguageTracker, detect_language
 from chatbot.llm import LLMError
 from chatbot.retrieval import chunks_from_files
 
-st.set_page_config(page_title="DesiMart Assistant", page_icon="🛒", layout="wide")
+st.set_page_config(page_title="Multilingual Chatbot", page_icon="", layout="wide")
 
 URDU_LETTERS = re.compile(r"[\u0600-\u06FF]")
 LANGUAGE_LABELS = {"english": "English", "urdu": "Urdu", "roman_urdu": "Roman Urdu"}
@@ -212,7 +212,8 @@ def run_comparison(question, model_a, model_b, retriever, role, judge_model) -> 
     language = LanguageTracker().update(question)
     chunks = retriever.search(question) if retriever else []
     messages = [
-        {"role": "system", "content": build_system_prompt(language, chunks, role)},
+        {"role": "system", "content": build_system_prompt(language, chunks, role,
+                                                          searched=retriever is not None)},
         {"role": "user", "content": question},
     ]
     results = []
@@ -385,7 +386,7 @@ if mode == "Chat":
 # ---------------------------------------------------------------------------
 # Page
 # ---------------------------------------------------------------------------
-st.title("Multilingual chatbot")
+st.title("Multilingual Chatbot")
 
 if use_docs and doc_source == UPLOAD and retriever is None:
     st.warning("Documents are switched on, but no readable file is uploaded yet "
@@ -414,6 +415,10 @@ if mode == "Chat":
                        f"{LANGUAGE_LABELS[reply.language]}")
             if reply.sources:
                 caption += f" · documents used: {', '.join(reply.sources)}"
+            if len(reply.search_queries) > 1:
+                caption += f" · also searched as: “{reply.search_queries[1]}”"
+            if reply.translation_error:
+                caption += f" · ⚠️ English translation failed ({reply.translation_error[:150]})"
             st.session_state.messages.append(
                 {"role": "assistant", "content": reply.text, "caption": caption}
             )

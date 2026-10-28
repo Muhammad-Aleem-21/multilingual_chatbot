@@ -49,7 +49,9 @@ def main() -> None:
         print(f"QUESTION: {question}   [detected: {detection.label}]")
         queries = retriever.queries_for(question)
         if len(queries) == 1 and detection.reply_language in ("urdu", "roman_urdu"):
-            print("  (translation failed or was identical: check your Groq key)")
+            reason = retriever.last_translation_error or "the translation was identical to the question"
+            print(f"  ⚠️ NO English translation was used. Reason: {reason}")
+            print(f"     (models tried: {retriever.translate_models})")
         show_top(retriever, retriever.score_all(queries[0]), "as typed:")
         if len(queries) > 1:
             print(f"  English translation: {queries[1]}")
