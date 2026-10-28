@@ -1,0 +1,8 @@
+{
+  "python.terminal.activateEnvironment": true,
+  "python.testing.unittestEnabled": true,
+  "python.testing.pytestEnabled": false,
+  "python.testing.unittestArgs": ["-v", "-s", "tests", "-t", "."],
+  "files.encoding": "utf8",
+  "python-envs.defaultEnvManager": "ms-python.python:system"
+}

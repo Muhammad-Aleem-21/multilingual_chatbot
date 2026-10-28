@@ -1,0 +1,5 @@
+Discounts and Coupon Codes
+
+Each coupon code can be used once per customer and cannot be combined with another code. Most codes need a minimum order of Rs. 1,500 and work only until the expiry date printed on the coupon.
+
+If your code is not working, check for spelling mistakes or extra spaces, check the expiry date and the minimum order amount, and make sure your cart has no clearance items, because coupon codes do not apply to clearance items.

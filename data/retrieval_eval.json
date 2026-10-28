@@ -1,0 +1,23 @@
+[
+  {"id": 1, "query": "واپسی کی پالیسی کیا ہے؟", "type": "urdu", "expected_source": "return_policy.txt"},
+  {"id": 2, "query": "ڈیلیوری میں کتنے دن لگتے ہیں؟", "type": "urdu", "expected_source": "delivery.txt"},
+  {"id": 3, "query": "کیا آپ کیش آن ڈیلیوری لیتے ہیں؟", "type": "urdu", "expected_source": "payment_methods.txt"},
+  {"id": 4, "query": "میں اپنا پاس ورڈ بھول گیا ہوں", "type": "urdu", "expected_source": "account_help.txt"},
+  {"id": 5, "query": "میں اپنا آرڈر کیسے ٹریک کروں؟", "type": "urdu", "expected_source": "order_tracking.txt"},
+  {"id": 6, "query": "کسٹمر سپورٹ کب تک کھلی ہوتی ہے؟", "type": "urdu", "expected_source": "contact_support.txt"},
+  {"id": 7, "query": "ڈسکاؤنٹ کوڈ کام نہیں کر رہا", "type": "urdu", "expected_source": "discounts.txt"},
+  {"id": 8, "query": "میرے پیسے واپس کب ملیں گے؟", "type": "urdu", "expected_source": "return_policy.txt"},
+
+  {"id": 9, "query": "return ki policy kya hai", "type": "roman_urdu", "expected_source": "return_policy.txt"},
+  {"id": 10, "query": "delivery charges kitne hain", "type": "roman_urdu", "expected_source": "delivery.txt"},
+  {"id": 11, "query": "kya easypaisa se payment ho sakti hai", "type": "roman_urdu", "expected_source": "payment_methods.txt"},
+  {"id": 12, "query": "password reset kaise karun", "type": "roman_urdu", "expected_source": "account_help.txt"},
+  {"id": 13, "query": "mera order cancel karna hai", "type": "roman_urdu", "expected_source": "order_tracking.txt"},
+  {"id": 14, "query": "aap ka whatsapp number kya hai", "type": "roman_urdu", "expected_source": "contact_support.txt"},
+  {"id": 15, "query": "coupon code kaam nahi kar raha", "type": "roman_urdu", "expected_source": "discounts.txt"},
+  {"id": 16, "query": "paise wapas kitne din mein aate hain", "type": "roman_urdu", "expected_source": "return_policy.txt"},
+  {"id": 17, "query": "Mera parcel miss ho gaya courier se, ab kya hoga?", "type": "roman_urdu", "expected_source": "delivery.txt"},
+
+  {"id": 18, "query": "How long does delivery take?", "type": "english", "expected_source": "delivery.txt"},
+  {"id": 19, "query": "How do I cancel my order?", "type": "english", "expected_source": "order_tracking.txt"}
+]

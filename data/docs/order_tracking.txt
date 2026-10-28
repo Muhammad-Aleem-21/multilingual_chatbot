@@ -1,0 +1,7 @@
+Order Tracking and Cancellation
+
+Tracking: after your order is dispatched we send you an SMS and an email with a tracking number. Enter it on the Track Order page to see where your parcel is.
+
+Cancellation: you can cancel an order for free before it is dispatched, from the My Orders page or by contacting support. Once an order is dispatched it cannot be cancelled, but you can refuse the delivery or return it after receiving it.
+
+Wrong or missing items: if you received a wrong item or your parcel has missing items, contact support within 48 hours with your order number and a photo.

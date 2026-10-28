@@ -1,0 +1,33 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "1) Chat with the bot",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/main.py",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "2) Eval: language detection",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "evaluation.eval_language_detection",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "3) Eval: compare models",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "evaluation.compare_models",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "4) Eval: cross-language retrieval",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "evaluation.eval_retrieval",
+      "console": "integratedTerminal"
+    }
+  ]
+}

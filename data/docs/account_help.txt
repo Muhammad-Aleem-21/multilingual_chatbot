@@ -1,0 +1,9 @@
+Account Help
+
+Forgot password: on the login page tap Forgot Password and enter your email or phone number. We send a reset link or a 4-digit code. The code is valid for 10 minutes.
+
+Change email or phone number: go to My Account, then Profile, and edit the details. We verify new details with a code.
+
+Delete account: email help@desimart.example from your registered email address with the subject Delete my account. Deletion takes up to 7 days and cannot be undone.
+
+Locked account: after 5 wrong password attempts your account is locked for 30 minutes.

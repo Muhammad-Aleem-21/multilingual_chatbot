@@ -1,0 +1,6 @@
+groq>=0.11.0
+python-dotenv>=1.0.0
+sentence-transformers>=2.7.0
+numpy>=1.24
+streamlit>=1.30
+pypdf>=4.0
