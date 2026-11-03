@@ -1,5 +1,9 @@
 # Roman Urdu & Multilingual Chatbot: What It Does
 
+**Browser extension:** See [extension/README.md](extension/README.md) to install the floating website chat widget in Chrome or Edge. Start its backend with `python extension_server.py`.
+
+**Free hosted extension API:** Follow [DEPLOY_FREE.md](DEPLOY_FREE.md) for PythonAnywhere Beginner hosting without payment details. Use `requirements-hosted.txt` for the small hosted backend.
+
 A chatbot that understands **English, Urdu (اردو), Roman Urdu** (Urdu typed in English letters, e.g. `kya hal hai`) and **mixed messages**, replies in the right language, and can answer **from documents** even when the question and the document are in different languages.
 
 ---

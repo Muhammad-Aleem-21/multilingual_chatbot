@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>Website Chat settings</title>
+<style>body{font:16px system-ui;max-width:600px;margin:60px auto;padding:24px;color:#17312e}input{box-sizing:border-box;width:100%;padding:12px;margin:12px 0}button{background:#12695d;color:white;border:0;padding:12px 20px;border-radius:8px}p{line-height:1.6}</style>
+<h1>Website Chat</h1><p>Enter your hosted server's HTTPS address and access token. For local testing use the default address and the token printed by <code>python extension_server.py</code>.</p>
+<label for="endpoint">Server address</label><input id="endpoint" type="url" value="http://127.0.0.1:8765" placeholder="https://YOURUSERNAME.pythonanywhere.com">
+<label for="token">Access token</label><input id="token" type="password" autocomplete="off"><button id="save">Save settings</button><p id="status" role="status"></p>
+<p>Questions send collected page text to the server you choose, which sends relevant excerpts and your question to Groq. Only use a server you trust and content you may share. Never paste your Groq API key here.</p>
+<script src="options.js"></script></html>

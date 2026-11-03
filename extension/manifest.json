@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Website Chat — English, Urdu & Roman Urdu",
+  "version": "1.1.0",
+  "description": "Ask questions about the current website and pages you collect.",
+  "permissions": ["storage"],
+  "host_permissions": ["http://127.0.0.1/*"],
+  "optional_host_permissions": ["https://*/*"],
+  "background": {"service_worker": "background.js"},
+  "options_page": "options.html",
+  "action": {"default_title": "Website Chat settings"},
+  "content_scripts": [{"matches": ["http://*/*", "https://*/*"], "js": ["content.js"], "run_at": "document_idle"}]
+}
